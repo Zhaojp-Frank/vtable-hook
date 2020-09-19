@@ -60,15 +60,28 @@ void vtablehook_protect(void* region, int protection) {
 * offset: 0 = method 1, 1 = method 2 etc...
 * return: original function
 */
-
+//extern intptr_t orig_alloc_p;
 void* vtablehook_hook(void* instance, void* hook, int offset) {
-        intptr_t vtable = *((intptr_t*)instance);
-        intptr_t entry = vtable + sizeof(intptr_t) * offset;
-        intptr_t original = *((intptr_t*) entry);
+  intptr_t vtable = *((intptr_t*)instance);
+  intptr_t entry = vtable + sizeof(intptr_t) * offset;
+  intptr_t original = *((intptr_t*) entry);
 
-        int original_protection = vtablehook_unprotect((void*)entry);
-        *((intptr_t*)entry) = (intptr_t)hook;
-        vtablehook_protect((void*)entry, original_protection);
+  int original_protection = vtablehook_unprotect((void*)entry);
+  *((intptr_t*)entry) = (intptr_t)hook;
+  vtablehook_protect((void*)entry, original_protection);
 
-        return (void*)original;
+  //orig_alloc_p = original;
+  return (void*)original;
+}
+
+int vtablehook_restore(void* instance, void* orig_func, int offset) {
+  intptr_t vtable = *((intptr_t*)instance);
+  intptr_t entry = vtable + sizeof(intptr_t) * offset;
+  intptr_t curr_ = *((intptr_t*) entry);
+
+  int original_protection = vtablehook_unprotect((void*)entry);
+  *((intptr_t*)entry) = (intptr_t)orig_func;
+  vtablehook_protect((void*)entry, original_protection);
+
+  return 0;
 }
