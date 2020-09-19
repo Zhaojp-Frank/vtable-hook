@@ -6,7 +6,7 @@ class Object {
         int member;
 
         Object(int init) {
-                member = init;
+           member = init;
         }
 
         virtual int Foo(int size) {
@@ -27,7 +27,6 @@ void __fastcall FooHook(Object* that) {
 int FooHook(Object* that, int size) {
 #endif
   int ret = 0;
-  //printf("----- Now in Hooked func-------\n");
   if (orig_func_p) {
     ret = (reinterpret_cast<FUNC_PTR>(orig_func_p))(that, size); 
   }
@@ -36,7 +35,6 @@ int FooHook(Object* that, int size) {
 
 int main() {
   Object* o = new Object(123);
-  //o->Foo(2048);
 
   orig_func_p = vtablehook_hook(o, (void*)FooHook, 0);
   o->Foo(2048);
