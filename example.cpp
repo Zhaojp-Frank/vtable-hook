@@ -1,6 +1,27 @@
 #include "vtablehook.h"
 #include <stdio.h>
-
+// you can get the VTable location either by dereferencing the
+// // first pointer in the object or by analyzing the compiled binary.
+// unsigned long VTableLocation = 0U;
+// // then you have to figure out which slot the function is in. this is easy
+// // since they're in the same order as they are declared in the class definition.
+// // just make sure to update the index if 1) the function declarations are
+// // re-ordered and/or 2) virtual methods are added/removed from any base type.
+// unsigned VTableOffset = 0U;
+// typedef void (__thiscall Base::*FunctionType)(const Base*);
+// FunctionType* vtable = reinterpret_cast<FunctionType*>(VTableLocation);
+//
+// bool hooked = false;
+// HANDLE process = ::GetCurrentProcess();
+// DWORD protection = PAGE_READWRITE;
+// DWORD oldProtection;
+// if ( ::VirtualProtectEx( process, &vtable[VTableOffset], sizeof(int), protection, &oldProtection ) )
+// {
+//     vtable[VTableOffset] = static_cast<FunctionType>(&ReplacementMethod);
+//
+//     if ( ::VirtualProtectEx( process, &vtable[VTableOffset], sizeof(int), oldProtection, &oldProtection ) )
+//       hooked = true;
+// }
 class Object {
         public:
         int member;
