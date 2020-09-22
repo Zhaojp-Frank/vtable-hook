@@ -5,6 +5,12 @@ C++ Vtable Hooking Library. Only requires a header.
 
 Validated in Linux, X86, g++
 
+Good Ref:
+
+http://lazarenko.me/wide-pointers/
+
+http://lazarenko.me/devirtualization/
+
 ### Example ###
 ```bash
 
