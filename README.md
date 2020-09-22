@@ -2,61 +2,45 @@ vtable-hook
 ===========
 
 C++ Vtable Hooking Library. Only requires a header.
-Supports Windows and Linux.
+
 Validated in Linux, X86, g++
 
 ### Example ###
-```C++
+```bash
 
-#include "vtablehook.h"
-#include <stdio.h>
+# one can use GCC extension to query member func addr
+# then lookup vtable to confirm the offset
+# Here're the sample's output 
 
-class Object {
-        public:
-        int member;
+offset:0 orig_func.addr:401140
+offset:1 orig_func.addr:40117a
+offset:2 orig_func.addr:4010fe
+offset:3 orig_func.addr:40104a
+offset:4 orig_func.addr:0
+kid.foo1:0x4010fe foo2:0x40104a
 
-        Object(int init) {
-           member = init;
-        }
+call o->Foo()
+Orig-Kid-Foo1: input size:1024
+call o->*mfp1()
+Orig-Kid-Foo1: input size:1024
 
-        virtual int Foo(int size) {
-           int ret = 0;
-           if (size <= 2048) {
-             printf("Orig: input size:%d\n", size);
-           } else ret = -1;
-           return ret;
-        }
-};
+offset:0 orig_func.addr:400fbe
+offset:1 orig_func.addr:401024
+offset:2 orig_func.addr:40108e
+offset:3 orig_func.addr:40104a
+offset:4 orig_func.addr:0
+child.foo1:0x40108e foo2:0x40104a
 
-typedef int (*FUNC_PTR)(void*, int size);
-void *orig_func_p = NULL;
+-------to hook
+offset:2 orig_func.addr:4010fe
+Orig-Kid-Foo1: input size:2048
+---- Hooked orig.size:2048 orig.ret:0
+---- Hooked orig.size:4096 orig.ret:-1
+Orig-Kid-Foo1: input size:2048
+---- Hooked orig.size:2048 orig.ret:0
 
-#ifdef WIN32
-void __fastcall FooHook(Object* that) {
-#elif __linux__
-int FooHook(Object* that, int size) {
-#endif
-  int ret = 0;
-  if (orig_func_p) {
-    ret = (reinterpret_cast<FUNC_PTR>(orig_func_p))(that, size); 
-  }
-  printf("---- Hooked orig.size:%i orig.ret:%d\n", size, ret);
-}
-
-int main() {
-  Object* o = new Object(123);
-
-  orig_func_p = vtablehook_hook(o, (void*)FooHook, 0);
-  o->Foo(2048);
-  o->Foo(4096);
-  o->Foo(2048);
-
-  vtablehook_restore(o, (void*)orig_func_p, 0);
-  o->Foo(2048);
-  o->Foo(4096);
-  o->Foo(2048);
-
-  return 0;
-}
+-------to restore
+Orig-Kid-Foo1: input size:2048
+Orig-Kid-Foo1: input size:2048
 
 ```
