@@ -22,6 +22,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 #include <stdint.h>
+#include <stdio.h>
 
 #ifdef WIN32
 #include <Windows.h>
@@ -61,10 +62,18 @@ void vtablehook_protect(void* region, int protection) {
 * return: original function
 */
 //extern intptr_t orig_alloc_p;
+void vtable_print(void* instance, int offset) {
+  intptr_t vtable = *((intptr_t*)instance);
+  intptr_t entry = vtable + sizeof(intptr_t) * offset;
+  intptr_t original = *((intptr_t*) entry);
+  printf("offset:%d orig_func.addr:%lx\n", offset, original);
+}
+
 void* vtablehook_hook(void* instance, void* hook, int offset) {
   intptr_t vtable = *((intptr_t*)instance);
   intptr_t entry = vtable + sizeof(intptr_t) * offset;
   intptr_t original = *((intptr_t*) entry);
+  printf("offset:%d orig_func.addr:%lx\n", offset, original);
 
   int original_protection = vtablehook_unprotect((void*)entry);
   *((intptr_t*)entry) = (intptr_t)hook;
