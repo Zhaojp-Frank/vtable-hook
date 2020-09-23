@@ -1,5 +1,6 @@
 #include "vtablehook.h"
 #include <stdio.h>
+#include <typeinfo>
 // you can get the VTable location either by dereferencing the
 // // first pointer in the object or by analyzing the compiled binary.
 // unsigned long VTableLocation = 0U;
@@ -69,7 +70,10 @@ class Child : public Object {
      int ret = 0;
      if (size <= 2048) {
        printf("Orig-child-Foo1: input size:%d\n", size);
-      } else ret = -1;
+      } else {
+       printf("Orig-child-Foo1: input size:%d\n", size);
+       ret = -1;
+      }
      return ret;
     }
 };
@@ -84,22 +88,28 @@ class Kid : public Child {
      int ret = 0;
      if (size <= 2048) {
        printf("Orig-Kid-Foo1: input size:%d\n", size);
-      } else ret = -1;
+      } else {
+       printf("Orig-Kid-Foo1: input size:%d\n", size);
+       ret = -1;
+      }
      return ret;
     }
 };
 
-typedef int (*FUNC_PTR)(void*, int size);
+// NOTE: must add Object as first arg, comparing to original member function
+// Object& and Object* both are ok
+typedef int (*FUNC_PTR)(Object &obj, int);
 void *orig_func_p = NULL;
 
 #ifdef WIN32
 void __fastcall FooHook(Object* that) {
 #elif __linux__
-int FooHook(Object* that, int size) {
+int FooHook(Object& obj, int size) {
 #endif
   int ret = 0;
+  printf("-------------in hooked:sz:%d\n", size);
   if (orig_func_p) {
-    ret = (reinterpret_cast<FUNC_PTR>(orig_func_p))(that, size); 
+    ret = (reinterpret_cast<FUNC_PTR>(orig_func_p))(obj, size); 
   }
   printf("---- Hooked orig.size:%i orig.ret:%d\n", size, ret);
 }
@@ -116,6 +126,7 @@ int main() {
   int (Object::*mfp1)(int) = &Object::Foo;
   int (Object::*mfp2)(int, int) = &Object::Foo;
   printf("kid.foo1:%p foo2:%p\n", (void *)(o->*mfp1), (void *)(o->*mfp2));
+  printf("kid.foo1:%lx foo2:%lx\n", (uint64_t)(void *)(o->*mfp1), (uint64_t)(void *)(o->*mfp2));
 
   // ok 
   printf("\ncall o->Foo()\n");
@@ -135,11 +146,16 @@ int main() {
   int (Object::*mfp4)(int, int) = &Object::Foo;
   printf("child.foo1:%p foo2:%p\n", (void *)(oo->*mfp3), (void *)(oo->*mfp4));
 
+  // ref has same addr with instance with &
+  Object x(123);
+  Object& ref_ = x;
+  printf("\nobjAddr:%lx ref addr:%lx type:%s %s same:%s\n", &x, &ref_, typeid(o).name(), typeid(oo).name(), (typeid(o)==typeid(oo))?"Y":"N");
+
   printf("\n-------to hook\n");
   orig_func_p = vtablehook_hook(o, (void*)FooHook, 2);
-  o->Foo(2048);
+  o->Foo(1024);
   o->Foo(4096);
-  o->Foo(2048);
+  o->Foo(1024);
 
   printf("\n-------to restore\n");
   vtablehook_restore(o, (void*)orig_func_p, 2);
